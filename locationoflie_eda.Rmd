@@ -5,26 +5,62 @@ date: "2/28/2022"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r loadpackages}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(knitr)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+loc_tags <- read.csv("first700loctags.csv") %>%
+  filter(location != "")
 ```
 
-## Including Plots
+```{r}
+loc_tags %>%
+  group_by(location) %>%
+  summarize(count = n()) %>%
+  kable()
+```
+Proposed categories:
+- Debate (campaign debates, panel discussion)
+- Statement on TV (any televised interview, video remarks)
+- Interview (radio interview and conversation with reporters)
+- Public interaction (town hall, forum)
+- Advertisement (campaign, television, radio, and unspecified)
+- Social Media (non-campaign video: tweets, facebook posts, etc)
+- Written communication (own website, emails, fliers, own writing/blog posts, letters, mailers, press releases)
+- Press release (press briefing)
 
-You can also embed plots, for example:
+```{r}
+proposed_loc_tags <- loc_tags %>%
+  mutate(prop_location = case_when(location == "panel discussion" ~ "debate",
+                              location == "debate" ~ "debate",
+                              location == "video remarks" ~ "statement on tv",
+                              location == "statement on tv" ~ "statement on tv",
+                              location == "televised address" ~ "statement on tv",
+                              location == "radio interview" ~ "interview",
+                              location == "interview" ~ "interview",
+                              location == "town hall" ~ "public interaction",
+                              location == "forum" ~ "public interaction",
+                              location == "advertisement" ~ "advertisement",
+                              location == "attack ad" ~ "advertisement",
+                              location == "online advertisement" ~ "advertisement",
+                              location == "radio advertisement" ~ "advertisement",
+                              location == "tv advertisement" ~ "advertisement",
+                              location == "own website" ~ "written communication",
+                              location == "email" ~ "written communication",
+                              location == "email newsletter" ~ "written communication",
+                              location == "own writing" ~ "written communication",
+                              location == "letter" ~ "written communication",
+                              location == "mailer" ~ "written communication",
+                              location == "press release" ~ "written communication",
+                              location == "email // own writing" ~ "written communication",))
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+proposed_loc_tags %>%
+  group_by(prop_location) %>%
+  summarize(count = n()) %>%
+  kable()
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
