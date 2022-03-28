@@ -19,6 +19,8 @@ loc_tags <- read.csv("locoflie.csv") %>%
                                                       "Mostly False",
                                                       "FALSE",
                                                       "Pants on Fire")))
+
+truenesscolors = c("#69B34C", "#ACB334", "#FDE64B", "#FAB733", "#FF872C", "#FF0000")
 ```
 
 **Exploratory Data Analysis**
@@ -27,17 +29,19 @@ loc_tags <- read.csv("locoflie.csv") %>%
 loc_tags %>%
   group_by(claimant_party) %>%
   summarise(count = n()) %>%
-  kable(caption = "Claims by Party")
+  kable(caption = "Claims Count by Party")
 ```
+
+As we know, there are approximately 100 more claims made by Democrats versus Republicans. Given the overall size of the dataset, though, I can say they are about equivalent, as Democrats have 1.09x as many claims as Republicans. 
 
 ```{r, echo = FALSE}
 loc_tags %>%
   group_by(location) %>%
   summarise(count = n()) %>%
-  kable(caption = "Distribution of all claims by Location")
+  kable(caption = "Distribution of All Claims by Location")
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, message = FALSE}
 loc_tags %>%
   group_by(location, claimant_party) %>%
   summarise(count = n()) %>%
@@ -45,6 +49,20 @@ loc_tags %>%
   kable(caption = "Distribution of Claims by Party and Location")
 ```
 
+```{r, echo = FALSE, fig.height = 8}
+loc_tags %>%
+  ggplot(aes(x = claimant_party, fill = textualRating)) +
+  geom_bar(position = "fill") +
+  facet_wrap(~ location, ncol = 2) +
+  labs(
+    x = "Claimant Party",
+    y = "Rating Distribution",
+    fill = "PolitiFact Rating",
+    title = "Claim Ratings by Political Party and Location"
+  ) +
+  scale_fill_manual(values = truenesscolors)
+```
+\newpage
 **Social Media**
 
 ```{r, echo = FALSE}
@@ -52,13 +70,12 @@ loc_tags %>%
   filter(location == "Social Media") %>%
   group_by(location.extra) %>%
   summarise(count = n()) %>%
-  kable(caption = "Distribution of claims by Social Media App")
+  kable(caption = "Distribution of Claims by Social Media App")
 ```
 
 Seeing that the vast majority of claims originate on Twitter and Facebook, lets center in on those.
 
 ```{r, echo = FALSE}
-truenesscolors = c("#69B34C", "#ACB334", "#FDE64B", "#FAB733", "#FF872C", "#FF0000")
 loc_tags %>%
   filter(location == "Social Media",
          location.extra == "Twitter" | location.extra == "Facebook") %>%
@@ -73,7 +90,15 @@ loc_tags %>%
   ) +
   scale_fill_manual(values = truenesscolors)
 ```
+
 ```{r, echo = FALSE}
+numb_tags <- loc_tags %>%
+  filter(location == "Social Media",
+         location.extra == "Twitter" | location.extra == "Facebook") %>%
+  group_by(claimant_party) %>%
+  summarize(count = n()) %>%
+  pull(count)
+
 loc_tags %>%
   filter(location == "Social Media",
          location.extra == "Twitter" | location.extra == "Facebook") %>%
@@ -86,7 +111,7 @@ loc_tags %>%
          location.extra == "Twitter" | location.extra == "Facebook",
          claimant_party == "Democratic") %>%
   group_by(textualRating) %>%
-  summarize(count = n(), proportion = n()/204) %>%
+  summarize(count = n(), proportion = n()/numb_tags[1]) %>%
   kable(caption = "Democrats PolitiFact Rating Proportions on Twitter and Facebook", digits = 3)
 
 loc_tags %>%
@@ -94,11 +119,13 @@ loc_tags %>%
          location.extra == "Twitter" | location.extra == "Facebook",
          claimant_party == "Republican") %>%
   group_by(textualRating) %>%
-  summarize(count = n(), proportion = n()/194) %>%
+  summarize(count = n(), proportion = n()/numb_tags[2]) %>%
   kable(caption = "Republicans PolitiFact Rating Proportions on Twitter and Facebook", digits = 3)
 ```
+
 This data appears to indicate that Republicans and Democrats had a similar proportion of True claims on Facebook and Twitter, just under 16% of all claims checked. Democrats had about 2.12x more Mostly True claims, and 1.33x more Half True claims. On the other side of the spectrum, Republicans had 1.87x more Mostly False statements, 1.46x more False statements, and 2.31x more Pants on Fire statements.
 
+\newpage
 **TV Appearance**
 
 ```{r, echo = FALSE}
@@ -114,8 +141,8 @@ To continue analytics, we will focus on all TV channels on which at least 50 cla
 ```{r, echo = FALSE, message = FALSE}
 loc_tags %>%
   filter(location == "TV Appearance",
-         location.extra == "FOX" | 
            location.extra == "CNN" | 
+           location.extra == "FOX" | 
            location.extra == "MSNBC" | 
            location.extra == "NBC" | 
            location.extra == "Regional Station") %>%
@@ -144,9 +171,62 @@ loc_tags %>%
   ) +
   scale_fill_manual(values = truenesscolors)
 ```
+
+```{r, echo = FALSE, message = FALSE}
+loc_tags %>%
+   filter(location == "TV Appearance",
+         location.extra == "FOX") %>%
+  group_by(claimant_party, textualRating) %>%
+  summarize(count = n()) %>%
+  pivot_wider(names_from = textualRating, values_from = count, values_fill = 0) %>%
+  kable(caption = "Claim Distribution on FOX")
+
+loc_tags %>%
+   filter(location == "TV Appearance",
+         location.extra == "CNN") %>%
+  group_by(claimant_party, textualRating) %>%
+  summarize(count = n()) %>%
+  pivot_wider(names_from = textualRating, values_from = count, values_fill = 0) %>%
+  kable(caption = "Claim Distribution on CNN", digits = 3)
+
+loc_tags %>%
+   filter(location == "TV Appearance",
+         location.extra == "MSNBC") %>%
+  group_by(claimant_party, textualRating) %>%
+  summarize(count = n()) %>%
+  pivot_wider(names_from = textualRating, values_from = count, values_fill = 0) %>%
+  kable(caption = "Claim Distribution on MSNBC")
+
+loc_tags %>%
+   filter(location == "TV Appearance",
+         location.extra == "NBC") %>%
+  group_by(claimant_party, textualRating) %>%
+  summarize(count = n()) %>%
+  pivot_wider(names_from = textualRating, values_from = count, values_fill = 0) %>%
+  kable(caption = "Claim Distribution on NBC")
+
+loc_tags %>%
+   filter(location == "TV Appearance",
+         location.extra == "Regional Station") %>%
+  group_by(claimant_party, textualRating) %>%
+  summarize(count = n()) %>%
+  pivot_wider(names_from = textualRating, values_from = count, values_fill = 0) %>%
+  kable(caption = "Claim Distribution on Regional Station")
+```
+
 Some interesting trends to note among the checked claims:
 - Virtually no True statements made by Republicans on CNN
 - Higher proportion of Pants on Fire claims made by Democrats on FOX
 - Significantly more False claims made by Republicans on NBC
 - Virtually no Pants on Fire statements made by Republicans on Regional Stations
+
+\newpage
+**Speech/Remarks**
+
+```{r, echo = FALSE}
+loc_tags %>%
+  filter(location == "Speech/Remarks") %>%
+  group_by(location.extra, claimant_party) %>%
+  summarize(count = n())
+```
 
