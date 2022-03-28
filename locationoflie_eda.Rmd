@@ -224,9 +224,11 @@ Some interesting trends to note among the checked claims:
 **Speech/Remarks**
 
 ```{r, echo = FALSE}
-loc_tags %>%
-  filter(location == "Speech/Remarks") %>%
-  group_by(location.extra, claimant_party) %>%
-  summarize(count = n())
+# loc_tags %>%
+#   filter(location == "Speech/Remarks") %>%
+#   group_by(location.extra, claimant_party) %>%
+#   summarize(count = n()) %>%
+#   pivot_wider(names_from = location.extra, values_from = count, values_fill = 0) %>%
+#   kable(caption = "Speech/Remark Distribution by Party")
 ```
 
