@@ -15,5 +15,41 @@ library(knitr)
 loc_tags <- read.csv("locoflie.csv")
 ```
 
+```{r}
+loc_tags %>%
+  group_by(claimant_party) %>%
+  summarise(count = n()) %>%
+  kable()
+```
+
+
+```{r}
+loc_tags %>%
+  group_by(location) %>%
+  summarise(count = n()) %>%
+  kable()
+
+loc_tags %>%
+  filter(location == "Social Media") %>%
+  group_by(location.extra) %>%
+  summarise(count = n()) %>%
+  kable()
+
+loc_tags %>%
+  filter(location == "TV Appearance") %>%
+  group_by(location.extra) %>%
+  summarise(count = n()) %>%
+  kable()
+```
+
+```{r}
+loc_tags %>%
+  group_by(location, claimant_party) %>%
+  summarise(count = n()) %>%
+  pivot_wider(names_from = location, values_from = count) %>%
+  kable()
+```
+
+
 
 
