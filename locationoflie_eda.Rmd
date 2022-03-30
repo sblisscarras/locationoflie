@@ -1,7 +1,7 @@
 ---
 title: "Location of the Lie EDA"
 author: "Sofia Bliss-Carrascosa"
-date: "2/28/2022"
+date: "3/30/2022"
 output: pdf_document
 ---
 
@@ -40,9 +40,10 @@ loc_tags %>%
     x = "Claimant Party",
     y = "Rating Distribution",
     fill = "PolitiFact Rating",
-    title = "Claim Ratings by Political Party and Location"
+    title = "Claim Ratings by Location"
   ) +
-  scale_fill_manual(values = truenesscolors)
+  scale_fill_manual(values = truenesscolors) +
+  theme(axis.text.x = element_text(size = 5))  
 ```
 
 The three largest categories of claims, in the PolitiFact database, are `Speech/Remarks`, `TV Appearance`, and `Social Media`. The smallest categories were `Public Event`, `Advertisement`, and `Interview`.
@@ -210,7 +211,7 @@ social_prop %>%
   kable(caption = "Proportion of Ratings by Platform", digits = 3)
 ```
 
-This data appears to indicate that Facebook has a higher proportion of falsehoods than Twitter, among all checked statements on PolitiFact. Of all statements on Facebook, 50.1% of statements were found to be Mostly False, False, or Pants on Fire, compared to 39.8% of the same on Twitter. Twitter also had a higher proportion of True statements checked, 16.3% to Facebook's 12.9%, about 1.26x higher.
+This data appears to indicate that Facebook has a higher proportion of falsehoods than Twitter, among all checked statements on PolitiFact. Of all statements on Facebook, 50.1% of statements were found to be Mostly False, False, or Pants on Fire, compared to 39.8% of the same on Twitter. Twitter also had a higher proportion of True statements checked, 16.3% to Facebook's 12.9%, about 1.26x higher. There are 2x as many Pants on Fire claims on Facebook when compared to Twitter.
 
 \newpage
 
@@ -301,7 +302,7 @@ tv_props %>%
 
 Basing trueness on Half True, Mostly True, and True statements, the descending order of trueness by TV Channel goes as follows: MSNBC (61.6% True-ish), CNN (56.5% True-ish), Regional Stations (56.2% True-ish), NBC (45.2% True-ish), and finally FOX (38.0% True-ish).
 
-FOX also had significantly less True statements recorded, and significantly more Pants on Fire claims. Compared to the next most extreme value, FOX had 0.60x as many True statements as CNN, and 3.36x as many Pants on Fire statements as NBC.
+FOX also had significantly less True statements recorded, and significantly more Pants on Fire claims. Compared to the next most extreme value, FOX had 0.63x as many True statements as NBC, and 3.19x as many Pants on Fire statements as CNN. Compared to Regional Stations, which has the lowest proportion of Pants on Fire claims, FOX news has 13.2x as many Pants on Fire claims.
 
 Among the major national news channels, CNN, MSNBC, and NBC had nearly identical proportions of Pants on Fire claims, 0.58, 0.050, and 0.055 respectively.
 
@@ -367,13 +368,144 @@ loc_tags %>%
   kable(caption = "Claim Distribution on Regional Station")
 ```
 
+```{r, echo = FALSE, message = FALSE}
+tv_totals_dems <- loc_tags %>%
+  filter(location == "TV Appearance",
+           location.extra == "CNN" | 
+           location.extra == "FOX" | 
+           location.extra == "MSNBC" | 
+           location.extra == "NBC" | 
+           location.extra == "Regional Station",
+         claimant_party == "Democratic") %>%
+  group_by(location.extra) %>%
+  summarize(count = n()) %>%
+  pull(count)
+
+cnn_prop_dems <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "CNN",
+         claimant_party == "Democratic") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals_dems[1])
+cnn_prop_dems$channel <- "CNN"
+cnn_prop_dems$party <- "Democratic"
+
+fox_prop_dems <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "FOX",
+         claimant_party == "Democratic") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals_dems[2])
+fox_prop_dems$channel <- "FOX"
+fox_prop_dems$party <- "Democratic"
+
+msnbc_prop_dems <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "MSNBC",
+         claimant_party == "Democratic") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals_dems[3])
+msnbc_prop_dems$channel <- "MSNBC"
+msnbc_prop_dems$party <- "Democratic"
+
+nbc_prop_dems <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "NBC",
+         claimant_party == "Democratic") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals_dems[4])
+nbc_prop_dems$channel <- "NBC"
+nbc_prop_dems$party <- "Democratic"
+  
+rs_prop_dems <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "Regional Station",
+         claimant_party == "Democratic") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals_dems[5])
+rs_prop_dems$channel <- "Regional Station"
+rs_prop_dems$party <- "Democratic"
+
+tv_props_dems <- rbind(cnn_prop_dems, fox_prop_dems, msnbc_prop_dems, nbc_prop_dems, rs_prop_dems)
+
+tv_totals_reps <- loc_tags %>%
+  filter(location == "TV Appearance",
+           location.extra == "CNN" | 
+           location.extra == "FOX" | 
+           location.extra == "MSNBC" | 
+           location.extra == "NBC" | 
+           location.extra == "Regional Station",
+         claimant_party == "Republican") %>%
+  group_by(location.extra) %>%
+  summarize(count = n()) %>%
+  pull(count)
+
+cnn_prop_reps <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "CNN",
+         claimant_party == "Republican") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals_reps[1])
+cnn_prop_reps$channel <- "CNN"
+cnn_prop_reps$party <- "Republican"
+
+fox_prop_reps <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "FOX",
+         claimant_party == "Republican") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals_reps[2])
+fox_prop_reps$channel <- "FOX"
+fox_prop_reps$party <- "Republican"
+
+msnbc_prop_reps <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "MSNBC",
+         claimant_party == "Republican") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals_reps[3])
+msnbc_prop_reps$channel <- "MSNBC"
+msnbc_prop_reps$party <- "Republican"
+
+nbc_prop_reps <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "NBC",
+         claimant_party == "Republican") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals_reps[4])
+nbc_prop_reps$channel <- "NBC"
+nbc_prop_reps$party <- "Republican"
+  
+rs_prop_reps <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "Regional Station",
+         claimant_party == "Republican") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals_reps[5])
+rs_prop_reps$channel <- "Regional Station"
+rs_prop_reps$party <- "Republican"
+
+tv_props_reps <- rbind(cnn_prop_reps, fox_prop_reps, msnbc_prop_reps, nbc_prop_reps, rs_prop_reps)
+
+tv_props_byparty <- rbind(tv_props_dems, tv_props_reps)
+
+tv_props_byparty %>%
+  arrange(channel) %>%
+  pivot_wider(names_from = textualRating, values_from = prop, values_fill = 0) %>%
+  kable(caption = "Claim Rating Proportions by Party and TV Channel", digits = 3)
+```
+
 Some interesting trends to note among the checked claims:
 
 \- Virtually no True statements made by Republicans on CNN
 
-\- Higher proportion of Pants on Fire claims made by Democrats on FOX
+\- Highest proportion of Pants on Fire claims made by Democrats on FOX (25.0% of Democratic claims checked on FOX)
 
-\- Significantly more False claims made by Republicans on NBC
+\- About equal proportion of False-ish statements on MSNBC (38.1% for Democrats, 38.9% for Republicans)
+
+\- Republicans appear to lie most on NBC, with 68.9% of claims checked as False-ish
+
+\- NBC also has the largest difference between True-ish statements by party, 67.9% Democratic claims were checked as True-ish whereas only 31.0% of Republican claims were checked as True-ish. This is a 36.9% difference.
 
 \- Virtually no Pants on Fire statements made by Republicans on Regional Stations
 
@@ -528,6 +660,24 @@ loc_tags %>%
     fill = "PolitiFact Rating",
     title = "Claim Ratings in Speeches/Remarks",
     subtitle = "Not listed as Press Events, Campaign Events, or Hearings"
+  ) +
+  scale_fill_manual(values = truenesscolors)
+```
+
+\newpage
+
+**Debates**
+
+```{r, echo = FALSE}
+loc_tags %>%
+  filter(location == "Debate") %>%
+ ggplot(aes(x = location.extra, fill = textualRating)) +
+  geom_bar(position = "fill") +
+  labs(
+    x = "Type of Debate",
+    y = "Rating Distribution",
+    fill = "PolitiFact Rating",
+    title = "Claim Ratings in Debates"
   ) +
   scale_fill_manual(values = truenesscolors)
 ```
