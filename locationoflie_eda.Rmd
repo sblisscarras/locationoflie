@@ -27,6 +27,90 @@ truenesscolors = c("#69B34C", "#ACB334", "#FDE64B", "#FAB733", "#FF872C", "#FF00
 
 ```{r, echo = FALSE}
 loc_tags %>%
+  group_by(location) %>%
+  summarise(count = n(), prop = n()/nrow(loc_tags)) %>%
+  kable(caption = "Distribution of All Claims by Location", digits = 3)
+```
+
+```{r, echo = FALSE}
+loc_tags %>%
+  ggplot(aes(x = location, fill = textualRating)) +
+  geom_bar(position = "fill") +
+  labs(
+    x = "Claimant Party",
+    y = "Rating Distribution",
+    fill = "PolitiFact Rating",
+    title = "Claim Ratings by Political Party and Location"
+  ) +
+  scale_fill_manual(values = truenesscolors)
+```
+
+The three largest categories of claims, in the PolitiFact database, are `Speech/Remarks`, `TV Appearance`, and `Social Media`. The smallest categories were `Public Event`, `Advertisement`, and `Interview`.
+
+```{r, echo = FALSE}
+all_loc_count <- loc_tags %>%
+  group_by(location) %>%
+  summarize(count = n()) %>%
+  pull(count)
+
+all_ad <- loc_tags %>%
+  filter(location == "Advertisement") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/all_loc_count[1])
+all_ad$location <- "Advertisement"
+
+all_deb <- loc_tags %>%
+  filter(location == "Debate") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/all_loc_count[2])
+all_deb$location <- "Debate"
+
+all_int <- loc_tags %>%
+  filter(location == "Interview") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/all_loc_count[3])
+all_int$location <- "Interview"
+
+all_pub <- loc_tags %>%
+  filter(location == "Public Event") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/all_loc_count[4])
+all_pub$location <- "Public Event"
+
+all_soc <- loc_tags %>%
+  filter(location == "Social Media") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/all_loc_count[5])
+all_soc$location <- "Social Media"
+
+all_spe <- loc_tags %>%
+  filter(location == "Speech/Remarks") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/all_loc_count[6])
+all_spe$location <- "Speech/Remarks"
+
+all_tv <- loc_tags %>%
+  filter(location == "TV Appearance") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/all_loc_count[7])
+all_tv$location <- "TV Appearance"
+
+all_wri <- loc_tags %>%
+  filter(location == "Written Statement") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/all_loc_count[8])
+all_wri$location <- "Written Statement"
+
+all_loc <- rbind(all_ad, all_deb, all_int, all_pub, all_soc, all_spe, all_tv, all_wri)
+all_loc %>%
+  pivot_wider(names_from = textualRating, values_from = prop) %>%
+  kable(caption = "Proportion of Ratings by Location", digits = 3)
+```
+
+The highest proportion of True-ish (True, Mostly True, Half True) claims are made in debates (0.604). The lowest proportion of True-ish claims are made in Advertisements (0.442). The highest proportion of Pants on Fire claims appear in interviews (8.7% of claims checked). The highest proportion of True statements are made at Public Events (18.8% of claims checked).
+
+```{r, echo = FALSE}
+loc_tags %>%
   group_by(claimant_party) %>%
   summarise(count = n(), prop = count/nrow(loc_tags)) %>%
   kable(caption = "Claims Count by Party", digits = 3)
@@ -45,13 +129,6 @@ loc_tags %>%
     title = "Claim Ratings by Political Party"
   ) +
   scale_fill_manual(values = truenesscolors)
-```
-
-```{r, echo = FALSE}
-loc_tags %>%
-  group_by(location) %>%
-  summarise(count = n()) %>%
-  kable(caption = "Distribution of All Claims by Location")
 ```
 
 ```{r, echo = FALSE, message = FALSE}
@@ -94,11 +171,10 @@ Seeing that the vast majority of claims originate on Twitter and Facebook, lets 
 loc_tags %>%
   filter(location == "Social Media",
          location.extra == "Twitter" | location.extra == "Facebook") %>%
-  ggplot(aes(x = claimant_party, fill = textualRating)) +
+  ggplot(aes(x = location.extra, fill = textualRating)) +
   geom_bar(position = "fill") +
-  facet_wrap(~ location.extra) +
   labs(
-    x = "Claimant Party",
+    x = "Social Media Platform",
     y = "Rating Distribution",
     fill = "PolitiFact Rating",
     title = "Claim Ratings by Political Party and Platform"
@@ -107,38 +183,34 @@ loc_tags %>%
 ```
 
 ```{r, echo = FALSE}
-numb_tags <- loc_tags %>%
+social <- loc_tags %>%
   filter(location == "Social Media",
          location.extra == "Twitter" | location.extra == "Facebook") %>%
-  group_by(claimant_party) %>%
+  group_by(location.extra) %>%
   summarize(count = n()) %>%
   pull(count)
 
-loc_tags %>%
+social_fac <- loc_tags %>%
   filter(location == "Social Media",
-         location.extra == "Twitter" | location.extra == "Facebook") %>%
-  group_by(claimant_party) %>%
-  summarize(count = n()) %>%
-  kable(caption = "Total Claims on Twitter and Facebook")
-
-loc_tags %>%
-  filter(location == "Social Media",
-         location.extra == "Twitter" | location.extra == "Facebook",
-         claimant_party == "Democratic") %>%
+         location.extra == "Facebook") %>%
   group_by(textualRating) %>%
-  summarize(count = n(), proportion = n()/numb_tags[1]) %>%
-  kable(caption = "Democrats PolitiFact Rating Proportions on Twitter and Facebook", digits = 3)
+  summarize(prop = n()/social[1])
+social_fac$platform <- "Facebook"
 
-loc_tags %>%
+social_twit <- loc_tags %>%
   filter(location == "Social Media",
-         location.extra == "Twitter" | location.extra == "Facebook",
-         claimant_party == "Republican") %>%
+         location.extra == "Twitter") %>%
   group_by(textualRating) %>%
-  summarize(count = n(), proportion = n()/numb_tags[2]) %>%
-  kable(caption = "Republicans PolitiFact Rating Proportions on Twitter and Facebook", digits = 3)
+  summarize(prop = n()/social[2])
+social_twit$platform <- "Twitter"
+
+social_prop <- rbind(social_fac, social_twit)
+social_prop %>%
+  pivot_wider(names_from = textualRating, values_from = prop) %>%
+  kable(caption = "Proportion of Ratings by Platform", digits = 3)
 ```
 
-This data appears to indicate that Republicans and Democrats had a similar proportion of True claims on Facebook and Twitter, just under 16% of all claims checked. Democrats had about 2.12x more Mostly True claims, and 1.33x more Half True claims. On the other side of the spectrum, Republicans had 1.87x more Mostly False statements, 1.46x more False statements, and 2.31x more Pants on Fire statements.
+This data appears to indicate that Facebook has a higher proportion of falsehoods than Twitter, among all checked statements on PolitiFact. Of all statements on Facebook, 50.1% of statements were found to be Mostly False, False, or Pants on Fire, compared to 39.8% of the same on Twitter. Twitter also had a higher proportion of True statements checked, 16.3% to Facebook's 12.9%, about 1.26x higher.
 
 \newpage
 
@@ -154,19 +226,84 @@ loc_tags %>%
 
 To continue analytics, we will focus on all TV channels on which at least 50 claims made. This leaves: CNN, FOX, MSNBC, NBC, and the Regional Station tag.
 
-```{r, echo = FALSE, message = FALSE}
+```{r, echo = FALSE}
 loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "FOX" | 
+           location.extra == "CNN" | 
+           location.extra == "MSNBC" | 
+           location.extra == "NBC" | 
+           location.extra == "Regional Station") %>%
+  ggplot(aes(x = location.extra, fill = textualRating)) +
+  geom_bar(position = "fill") +
+  labs(
+    x = "TV Channel",
+    y = "Rating Distribution",
+    fill = "PolitiFact Rating",
+    title = "Claim Ratings by TV Channel"
+  ) +
+  scale_fill_manual(values = truenesscolors)
+```
+
+```{r, echo = FALSE, message = FALSE}
+tv_totals <- loc_tags %>%
   filter(location == "TV Appearance",
            location.extra == "CNN" | 
            location.extra == "FOX" | 
            location.extra == "MSNBC" | 
            location.extra == "NBC" | 
            location.extra == "Regional Station") %>%
-  group_by(claimant_party, location.extra) %>%
+  group_by(location.extra) %>%
   summarize(count = n()) %>%
-  pivot_wider(names_from = location.extra, values_from = count) %>%
-  kable(caption = "Claims made on TV, by Claimant Party")
+  pull(count)
+
+cnn_prop <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "CNN") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals[1])
+cnn_prop$channel <- "CNN"
+
+fox_prop <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "FOX") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals[2])
+fox_prop$channel <- "FOX"
+
+msnbc_prop <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "MSNBC") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals[3])
+msnbc_prop$channel <- "MSNBC"
+
+nbc_prop <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "NBC") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals[4])
+nbc_prop$channel <- "NBC"
+  
+rs_prop <- loc_tags %>%
+  filter(location == "TV Appearance",
+         location.extra == "Regional Station") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/tv_totals[5])
+rs_prop$channel <- "Regional Station"
+
+tv_props <- rbind(cnn_prop, fox_prop, msnbc_prop, nbc_prop, rs_prop)
+
+tv_props %>%
+  pivot_wider(names_from = textualRating, values_from = prop) %>%
+  kable(caption = "Claim Rating Proportions by TV Channel", digits = 3)
 ```
+
+Basing trueness on Half True, Mostly True, and True statements, the descending order of trueness by TV Channel goes as follows: MSNBC (61.6% True-ish), CNN (56.5% True-ish), Regional Stations (56.2% True-ish), NBC (45.2% True-ish), and finally FOX (38.0% True-ish).
+
+FOX also had significantly less True statements recorded, and significantly more Pants on Fire claims. Compared to the next most extreme value, FOX had 0.60x as many True statements as CNN, and 3.36x as many Pants on Fire statements as NBC.
+
+Among the major national news channels, CNN, MSNBC, and NBC had nearly identical proportions of Pants on Fire claims, 0.58, 0.050, and 0.055 respectively.
 
 ```{r, echo = FALSE}
 loc_tags %>%
@@ -230,7 +367,15 @@ loc_tags %>%
   kable(caption = "Claim Distribution on Regional Station")
 ```
 
-Some interesting trends to note among the checked claims: - Virtually no True statements made by Republicans on CNN - Higher proportion of Pants on Fire claims made by Democrats on FOX - Significantly more False claims made by Republicans on NBC - Virtually no Pants on Fire statements made by Republicans on Regional Stations
+Some interesting trends to note among the checked claims:
+
+\- Virtually no True statements made by Republicans on CNN
+
+\- Higher proportion of Pants on Fire claims made by Democrats on FOX
+
+\- Significantly more False claims made by Republicans on NBC
+
+\- Virtually no Pants on Fire statements made by Republicans on Regional Stations
 
 \newpage
 
@@ -256,6 +401,10 @@ loc_tags %>%
   kable(caption = "Republicans Claim Location by Proportion", digits = 3)
 ```
 
+In our data, it appears that Democrats had a higher proportion of claims checked from Campaign events, 39.2%, than Republicans 24.4%. Conversley, Republicans had more checked statements at Press Events than Democrats, 28.7% versus 15.5%. Both had a very minimal amount of statements checked in Hearings, though Republicans had nearly 2x more claims, 7.8% of their total claims when compared to 4.1%.
+
+[Campaign Event Statements]{.ul}
+
 ```{r, echo = FALSE, fig.height = 4}
 loc_tags %>%
   filter(location == "Speech/Remarks", location.extra == "Campaign") %>%
@@ -271,10 +420,42 @@ loc_tags %>%
   scale_fill_manual(values = truenesscolors)
 ```
 
+```{r, echo = FALSE}
+total_speech_campaign <- loc_tags %>%
+  filter(location == "Speech/Remarks", location.extra == "Campaign") %>%
+  group_by(claimant_party) %>%
+  summarize(total = n()) %>%
+  pull(total)
+
+speech_campaign1 <- loc_tags %>%
+  filter(location == "Speech/Remarks", 
+         location.extra == "Campaign",
+         claimant_party == "Democratic") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/total_speech_campaign[1])
+speech_campaign1$party <- "Democratic"
+
+speech_campaign2 <- loc_tags %>%
+  filter(location == "Speech/Remarks", 
+         location.extra == "Campaign",
+         claimant_party == "Republican") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/total_speech_campaign[2]) 
+speech_campaign2$party <- "Republican"
+
+speech_campaign <- rbind(speech_campaign1, speech_campaign2)
+
+speech_campaign %>%
+  pivot_wider(names_from = textualRating, values_from = prop, values_fill = 0) %>%
+  kable(caption = "Claim Rating Proportion by Party", digits = 3)
+```
+
+[Press Event Statements]{.ul}
+
 ```{r, echo = FALSE, fig.height = 4}
 loc_tags %>%
   filter(location == "Speech/Remarks", 
-         location.extra == "Press Conference" | location.extra == "Press Briefing") %>%
+         location.extra == "Press Event") %>%
  ggplot(aes(x = claimant_party, fill = textualRating)) +
   geom_bar(position = "fill") +
   facet_wrap(~ location.extra) +
@@ -287,12 +468,58 @@ loc_tags %>%
   scale_fill_manual(values = truenesscolors)
 ```
 
+```{r, echo = FALSE}
+total_speech_press <- loc_tags %>%
+  filter(location == "Speech/Remarks", location.extra == "Press Event") %>%
+  group_by(claimant_party) %>%
+  summarize(total = n()) %>%
+  pull(total)
+
+speech_press1 <- loc_tags %>%
+  filter(location == "Speech/Remarks", 
+         location.extra == "Press Event",
+         claimant_party == "Democratic") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/total_speech_press[1])
+speech_press1$party <- "Democratic"
+
+speech_press2 <- loc_tags %>%
+  filter(location == "Speech/Remarks", 
+         location.extra == "Press Event",
+         claimant_party == "Republican") %>%
+  group_by(textualRating) %>%
+  summarize(prop = n()/total_speech_press[2]) 
+speech_press2$party <- "Republican"
+
+speech_press <- rbind(speech_press1, speech_press2)
+
+speech_campaign %>%
+  pivot_wider(names_from = textualRating, values_from = prop, values_fill = 0) %>%
+  kable(caption = "Claim Rating Proportion by Party", digits = 3)
+```
+
+[Statements in Hearings]{.ul}
+
 ```{r, echo = FALSE, fig.height = 4}
 loc_tags %>%
   filter(location == "Speech/Remarks", 
-         location.extra != "Press Conference",
-         location.extra != "Press Briefing",
-         location.extra != "Campaign") %>%
+         location.extra == "Hearing") %>%
+ ggplot(aes(x = claimant_party, fill = textualRating)) +
+  geom_bar(position = "fill") +
+  facet_wrap(~ location.extra) +
+  labs(
+    x = "Claimant Party",
+    y = "Rating Distribution",
+    fill = "PolitiFact Rating",
+    title = "Claim Ratings in Hearings"
+  ) +
+  scale_fill_manual(values = truenesscolors)
+```
+
+```{r, echo = FALSE, fig.height = 4}
+loc_tags %>%
+  filter(location == "Speech/Remarks", 
+         location.extra == "Unspecified") %>%
  ggplot(aes(x = claimant_party, fill = textualRating)) +
   geom_bar(position = "fill") +
   labs(
@@ -300,7 +527,7 @@ loc_tags %>%
     y = "Rating Distribution",
     fill = "PolitiFact Rating",
     title = "Claim Ratings in Speeches/Remarks",
-    subtitle = "Not listed as Press or Campaign Events"
+    subtitle = "Not listed as Press Events, Campaign Events, or Hearings"
   ) +
   scale_fill_manual(values = truenesscolors)
 ```
