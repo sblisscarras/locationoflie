@@ -37,7 +37,7 @@ loc_tags %>%
   ggplot(aes(x = location, fill = textualRating)) +
   geom_bar(position = "fill") +
   labs(
-    x = "Claimant Party",
+    x = "Location",
     y = "Rating Distribution",
     fill = "PolitiFact Rating",
     title = "Claim Ratings by Location"
@@ -671,6 +671,12 @@ loc_tags %>%
 ```{r, echo = FALSE}
 loc_tags %>%
   filter(location == "Debate") %>%
+  group_by(location.extra) %>%
+  summarize(count = n()) %>%
+  kable(caption = "Type of Debate, count")
+
+loc_tags %>%
+  filter(location == "Debate") %>%
  ggplot(aes(x = location.extra, fill = textualRating)) +
   geom_bar(position = "fill") +
   labs(
@@ -678,6 +684,32 @@ loc_tags %>%
     y = "Rating Distribution",
     fill = "PolitiFact Rating",
     title = "Claim Ratings in Debates"
+  ) +
+  scale_fill_manual(values = truenesscolors)
+```
+
+An unspecified debate is something like: a roundtable discussion, debates between politicians and a news anchor, or legislative debates.
+
+An election debate is a debate between two candidates actively engaged in campaigns against each other.\
+
+```{r, echo = FALSE}
+loc_tags %>%
+  filter(location == "Debate") %>%
+  group_by(location.extra, claimant_party) %>%
+  summarize(count = n()) %>%
+  pivot_wider(names_from = location.extra, values_from = count, values_fill = 0) %>%
+  kable(caption = "Type of Debate by Party, count")
+
+loc_tags %>%
+  filter(location == "Debate") %>%
+ ggplot(aes(x = claimant_party, fill = textualRating)) +
+  geom_bar(position = "fill") +
+  facet_wrap(~ location.extra) +
+  labs(
+    x = "Political Party",
+    y = "Rating Distribution",
+    fill = "PolitiFact Rating",
+    title = "Claim Ratings in Debates, by Political Party"
   ) +
   scale_fill_manual(values = truenesscolors)
 ```
